@@ -127,4 +127,57 @@ public class MyTreeController {
 			return result;
 		}
 	}
+
+	/**
+	 * 将节点移动到parent节点下的positon位置
+	 * @param id
+	 * @param newParentNodeId
+	 * @param sublingId 前一个Node的ID 0为开头，-1位结尾，否则为某节点ID
+	 * 将节点2移动到节点1下面开头的位置：move_node(2, 1, 0)
+	 * 将节点2移动到节点1下面末尾的位置：move_node(2, 1, -1)
+	 * 将节点2移动到节点1下面且跟在节点3后面的位置：move_node(2, 1, 3)
+	 * @return
+	 */
+	@RequestMapping(value = "/moveNode", method = RequestMethod.GET)
+	@ResponseBody
+	public Map<String,Object> moveNode(String id,String newParentNodeId,String sublingId){
+		Map<String,Object> result = new HashMap<>();
+		try{
+			Tree node = myTreeRepository.getOne(id);
+			if(node == null){
+				result.put("result","移动失败，当前节点为空");
+				return result;
+			}
+			Tree newParent = myTreeRepository.getOne(newParentNodeId);
+			if(newParent == null){
+				result.put("result","移动失败，新的父节点为空");
+				return result;
+			}
+			// 插入到父节点下的第一个位置
+			if(StringUtils.equals(sublingId,"0")){
+
+				return result;
+			}
+			// 插入到父节点的最后一个位置
+			if(StringUtils.equals(sublingId,"-1")){
+
+				return result;
+			}
+			// 插入到父节点下的指定节点的后面
+			Tree sublingNode = myTreeRepository.getOne(sublingId);
+			if(sublingNode == null){
+				result.put("result","移动失败，被指定的前序节点为空");
+				return result;
+			}
+			if(!StringUtils.equals(sublingNode.getParentId(),newParentNodeId)){
+				result.put("result","移动失败，被指定的前序节点不在指定的父节点之下");
+				return result;
+			}
+
+
+			return result;
+		}catch (Exception e){
+			return result;
+		}
+	}
 }
