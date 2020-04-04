@@ -1,6 +1,7 @@
 package com.jht.mytree.controller;
 
 import com.jht.mytree.dao.MyTreeRepository;
+import com.jht.mytree.dao.TreeIdRepository;
 import com.jht.mytree.pojo.Tree;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,9 @@ public class MyTreeController {
 
 	@Autowired
 	private MyTreeRepository myTreeRepository;
+
+	@Autowired
+	private TreeIdRepository treeIdRepository;
 
 	@RequestMapping(value = "/all", method = RequestMethod.GET)
 	@ResponseBody
@@ -132,7 +136,7 @@ public class MyTreeController {
 	 * 将节点移动到parent节点下的positon位置
 	 * @param id
 	 * @param newParentNodeId
-	 * @param sublingId 前一个Node的ID 0为开头，-1位结尾，否则为某节点ID
+	 * @param siblingId 前一个Node的ID 0为开头，-1位结尾，否则为某节点ID
 	 * 将节点2移动到节点1下面开头的位置：move_node(2, 1, 0)
 	 * 将节点2移动到节点1下面末尾的位置：move_node(2, 1, -1)
 	 * 将节点2移动到节点1下面且跟在节点3后面的位置：move_node(2, 1, 3)
@@ -140,7 +144,8 @@ public class MyTreeController {
 	 */
 	@RequestMapping(value = "/moveNode", method = RequestMethod.GET)
 	@ResponseBody
-	public Map<String,Object> moveNode(String id,String newParentNodeId,String sublingId){
+	@Transactional(rollbackOn = Exception.class)
+	public Map<String,Object> moveNode(String id,String newParentNodeId,String siblingId){
 		Map<String,Object> result = new HashMap<>();
 		try{
 			Tree node = myTreeRepository.getOne(id);
@@ -153,28 +158,39 @@ public class MyTreeController {
 				result.put("result","移动失败，新的父节点为空");
 				return result;
 			}
+			// 清空tree_id 多线程多并发操作时会有问题
+			treeIdRepository.deleteAllInBatch();
+			treeIdRepository.insertIds(node.getTreeLeft(),node.getTreeRight());
+			myTreeRepository.moveModeStep2(node.getTreeLeft(),node.getTreeRight());
+			myTreeRepository.moveNodeStep3(node.getTreeLeft(),node.getTreeRight());
 			// 插入到父节点下的第一个位置
-			if(StringUtils.equals(sublingId,"0")){
-
-				return result;
+			if(StringUtils.equals(siblingId,"0")){
+				myTreeRepository.moveToStartSetp1(node.getTreeLeft(),node.getTreeRight(),newParent.getTreeLeft());
+				myTreeRepository.moveToStartSetp2(node.getTreeLeft(),node.getTreeRight(),newParent.getTreeLeft());
+				myTreeRepository.moveToStartSetp3(node.getTreeLeft(),newParent.getTreeLeft());
+			}else if(StringUtils.equals(siblingId,"-1")){
+				// 插入到父节点的最后一个位置
+				myTreeRepository.moveToEndSetp1(node.getTreeLeft(),node.getTreeRight(),newParent.getTreeRight());
+				myTreeRepository.moveToEndSetp2(node.getTreeLeft(),node.getTreeRight(),newParent.getTreeRight());
+				myTreeRepository.moveToEndSetp3(node.getTreeLeft(),newParent.getTreeRight());
+			}else{
+				// 插入到父节点下的指定节点的后面
+				Tree siblingNode = myTreeRepository.getOne(siblingId);
+				if(siblingNode == null){
+					result.put("result","移动失败，被指定的前序节点为空");
+					return result;
+				}
+				if(!StringUtils.equals(siblingNode.getParentId(),newParentNodeId)){
+					result.put("result","移动失败，被指定的前序节点不在指定的父节点之下");
+					return result;
+				}
+				// 移动到指定位置
+				myTreeRepository.moveToSiblingSetp1(node.getTreeLeft(),node.getTreeRight(),siblingNode.getTreeRight());
+				myTreeRepository.moveToSiblingSetp2(node.getTreeLeft(),node.getTreeRight(),siblingNode.getTreeRight());
+				myTreeRepository.moveToSiblingSetp3(node.getTreeLeft(),siblingNode.getTreeRight());
 			}
-			// 插入到父节点的最后一个位置
-			if(StringUtils.equals(sublingId,"-1")){
-
-				return result;
-			}
-			// 插入到父节点下的指定节点的后面
-			Tree sublingNode = myTreeRepository.getOne(sublingId);
-			if(sublingNode == null){
-				result.put("result","移动失败，被指定的前序节点为空");
-				return result;
-			}
-			if(!StringUtils.equals(sublingNode.getParentId(),newParentNodeId)){
-				result.put("result","移动失败，被指定的前序节点不在指定的父节点之下");
-				return result;
-			}
-
-
+			treeIdRepository.deleteAllInBatch();
+			result.put("result","移动成功");
 			return result;
 		}catch (Exception e){
 			return result;

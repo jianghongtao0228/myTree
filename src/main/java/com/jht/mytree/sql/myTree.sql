@@ -32,5 +32,10 @@ CREATE TABLE `tree` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Tree';
 
 -- ----------------------------
--- Records of tree
+-- Table structure for tree_id
 -- ----------------------------
+DROP TABLE IF EXISTS `tree_id`;
+CREATE TABLE `tree_id` (
+  `ID` varchar(32) NOT NULL,
+  PRIMARY KEY (`ID`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Tree_Id';

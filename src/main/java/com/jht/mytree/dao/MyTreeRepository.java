@@ -76,4 +76,99 @@ public interface MyTreeRepository extends JpaRepository<Tree,String> {
 	 */
 	@Query(value = "SELECT count(*) FROM Tree where TREE_LEFT <= :treeLeft and TREE_RIGHT >= :treeRight order by TREE_LEFT ASC", nativeQuery = true)
 	Integer getLevel(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight);
+
+	@Modifying
+	@Query(value = "update Tree set TREE_LEFT = TREE_LEFT - (:treeRight - :treeLeft + 1) where TREE_LEFT > :treeLeft and id not in (select id from tree_id)", nativeQuery = true)
+	void moveModeStep2(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight);
+
+	@Modifying
+	@Query(value = "update Tree set TREE_RIGHT = TREE_RIGHT - (:treeRight - :treeLeft + 1) where TREE_RIGHT > :treeRight and id not in (select id from tree_id)", nativeQuery = true)
+	void moveNodeStep3(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight);
+
+	/**
+	 * 插入到末尾-步骤1
+	 * @param treeLeft
+	 * @param treeRight
+	 * @param parentRight
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_RIGHT = TREE_RIGHT + (:treeRight - :treeLeft + 1) where TREE_RIGHT >= :parentRight and id not in (select id from tree_id)", nativeQuery = true)
+	void moveToEndSetp1(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight,@Param("parentRight") Integer parentRight);
+
+	/**
+	 * 插入到末尾-步骤2
+	 * @param treeLeft
+	 * @param treeRight
+	 * @param parentRight
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_LEFT = TREE_LEFT + (:treeRight - :treeLeft + 1) where TREE_LEFT >= :parentRight and id not in (select id from tree_id)", nativeQuery = true)
+	void moveToEndSetp2(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight,@Param("parentRight") Integer parentRight);
+
+	/**
+	 * 插入到末尾-步骤3
+	 * @param treeLeft
+	 * @param parentRight
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_RIGHT = TREE_RIGHT - (:treeLeft - :parentRight), TREE_LEFT = TREE_LEFT - (:treeLeft - :parentRight) where id in (select id from tree_id)", nativeQuery = true)
+	void moveToEndSetp3(@Param("treeLeft") Integer treeLeft,@Param("parentRight") Integer parentRight);
+
+	/**
+	 * 插入到开头-步骤1
+	 * @param treeLeft
+	 * @param treeRight
+	 * @param parentLeft
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_RIGHT = TREE_RIGHT + (:treeRight - :treeLeft + 1) where TREE_RIGHT > :parentLeft and id not in (select id from tree_id)", nativeQuery = true)
+	void moveToStartSetp1(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight,@Param("parentLeft") Integer parentLeft);
+
+	/**
+	 * 插入到开头-步骤2
+	 * @param treeLeft
+	 * @param treeRight
+	 * @param parentLeft
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_LEFT = TREE_LEFT + (:treeRight - :treeLeft + 1) where TREE_LEFT > :parentLeft and id not in (select id from tree_id)", nativeQuery = true)
+	void moveToStartSetp2(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight,@Param("parentLeft") Integer parentLeft);
+
+	/**
+	 * 插入到开头-步骤3
+	 * @param treeLeft
+	 * @param parentLeft
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_RIGHT = TREE_RIGHT - (:treeLeft - :parentLeft - 1), TREE_LEFT = TREE_LEFT - (:treeLeft - :parentLeft - 1) where id in (select id from tree_id)", nativeQuery = true)
+	void moveToStartSetp3(@Param("treeLeft") Integer treeLeft,@Param("parentLeft") Integer parentLeft);
+
+	/**
+	 * 插入到指定位置-步骤1
+	 * @param treeLeft
+	 * @param treeRight
+	 * @param siblingRight
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_RIGHT = TREE_RIGHT + (:treeRight - :treeLeft + 1) where TREE_RIGHT > :siblingRight and id not in (select id from tree_id)", nativeQuery = true)
+	void moveToSiblingSetp1(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight,@Param("siblingRight") Integer siblingRight);
+
+	/**
+	 * 插入到指定位置-步骤2
+	 * @param treeLeft
+	 * @param treeRight
+	 * @param siblingRight
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_LEFT = TREE_LEFT + (:treeRight - :treeLeft + 1) where TREE_LEFT > :siblingRight and id not in (select id from tree_id)", nativeQuery = true)
+	void moveToSiblingSetp2(@Param("treeLeft") Integer treeLeft,@Param("treeRight") Integer treeRight,@Param("siblingRight") Integer siblingRight);
+
+	/**
+	 * 插入到指定位置-步骤3
+	 * @param treeLeft
+	 * @param siblingRight
+	 */
+	@Modifying
+	@Query(value = "update Tree set TREE_RIGHT = TREE_RIGHT - (:treeLeft - :siblingRight - 1), TREE_LEFT = TREE_LEFT - (:treeLeft - :siblingRight - 1) where id in (select id from tree_id)", nativeQuery = true)
+	void moveToSiblingSetp3(@Param("treeLeft") Integer treeLeft,@Param("siblingRight") Integer siblingRight);
 }
